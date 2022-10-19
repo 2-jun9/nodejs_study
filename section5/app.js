@@ -1,25 +1,81 @@
 const express = require("express");
 const path = require("path");
+const morgan = require("morgan");
+const session = require("express-session");
+const multer = require("multer"); //업로드 관련
+const cookieParser = require("cookie-parser");
+
 const app = express();
 
 app.set("port", process.env.PORT || 3000);
 
+app.use(morgan("combined")); // 요청과 응답을 기록해주는 라우터
+// app.use("요청경로", express.static(path.join(__dirname, "실제 경로")));
+app.use(cookieParser("zerochopassword"));
 app.use(
-  (req, res, next) => {
-    console.log("1 모든 요청에 실행하려구요");
-    next();
-  },
-  (req, res, next) => {
-    console.log("2 모든 요청에 실행하려구요");
+  session({
+    resave: false,
+    saveUninitialized: false,
+    secret: "zerochopassword",
+    cookie: {
+      httpOnly: true,
+    },
+  })
+);
+app.use("/", (req, res, next) => {
+  if (req.session.id) {
+    express.static(path.join(__dirname, "public"))(req, res, next); // 미들웨어 확장법
+  } else {
     next();
   }
-); // 미들웨어 : 공통부분을 묶어주는 역할, 미들웨어를 use라는 라우터에 장착함, 여러개 장착가능
+}); // next를 호출하지 않음
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "/index.html"));
-  res.send("안녕하세요."); // writeHead + end
-  res.json({ hello: "zerocho" });
+app.use((req, res, next) => {
+  req.data;
+  res.sendFile(path.join(__dirname));
 });
+
+// app.use(
+//   (req, res, next) => {
+//     req.cookies;
+//     res.cookie("name", encodeURIComponent(name), {
+//       expires: new Date(),
+//       httpOnly: true,
+//       path: "/",
+//     });
+//     console.log("1 모든 요청에 실행하려구요");
+//     next();
+//   },
+//   (req, res, next) => {
+//     try {
+//       console.log("error");
+//     } catch (error) {
+//       next(error); //next에 인수가 있으면 에러처리 미들웨어로 넘어감
+//     }
+//   }
+// ); // 미들웨어 : 공통부분을 묶어주는 역할, 미들웨어를 use라는 라우터에 장착함, 여러개 장착가능
+
+app.get(
+  "/",
+  (req, res) => {
+    res.sendFile(path.join(__dirname, "/index.html"));
+    if (true) {
+      next("route"); // 다음 라우터가 실행됨
+    } else {
+      next();
+    }
+    // res.send("안녕하세요.");
+    // writeHead + end
+    // res.json({ hello: "zerocho" });
+    // return이 아니므로 함수가 종료되지 않음
+    // res.render()
+  },
+  (req, res) => {
+    console.log("works?");
+  }
+);
 app.post("/", (req, res) => {
   res.send("hello espress");
 });
