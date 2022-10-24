@@ -1,3 +1,5 @@
+const dotenv = require("dotenv");
+
 const express = require("express");
 const path = require("path");
 const morgan = require("morgan");
@@ -5,18 +7,19 @@ const session = require("express-session");
 const multer = require("multer"); //업로드 관련
 const cookieParser = require("cookie-parser");
 
+dotenv.config(); // 설정값을 사용하는 패키지보다 위에 위치해야함
 const app = express();
 
 app.set("port", process.env.PORT || 3000);
 
-app.use(morgan("combined")); // 요청과 응답을 기록해주는 라우터
+app.use(morgan("dev")); // 요청과 응답을 기록해주는 라우터
 // app.use("요청경로", express.static(path.join(__dirname, "실제 경로")));
-app.use(cookieParser("zerochopassword"));
+app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(
   session({
     resave: false,
     saveUninitialized: false,
-    secret: "zerochopassword",
+    secret: process.env.COOKIE_SECRET,
     cookie: {
       httpOnly: true,
     },
@@ -29,6 +32,8 @@ app.use("/", (req, res, next) => {
     next();
   }
 }); // next를 호출하지 않음
+app.use("/user", userRouter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
